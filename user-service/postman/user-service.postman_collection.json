@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "User Service",
+    "_postman_id": "9e8550a2-c434-4e2f-b636-35b6bf38da27",
+    "description": "Collection for user-service endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": ["{{baseUrl}}"],
+          "path": ["users"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/501', function () {",
+              "  pm.expect([200, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get User By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/404/501', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Manager\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"MANAGER\",\n  \"assigned_area\": \"Area-1\",\n  \"franchise_id\": \"FR-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/404/501', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete User",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "{{userId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/404/501', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assign Area",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"assigned_area\": \"Area-2\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/assign-area",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "assign-area"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/404/501', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3002"
+    },
+    {
+      "key": "userId",
+      "value": "user-001"
+    }
+  ]
+}
