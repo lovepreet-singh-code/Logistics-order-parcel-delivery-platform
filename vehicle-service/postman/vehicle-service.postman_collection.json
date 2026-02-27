@@ -1,0 +1,273 @@
+{
+  "info": {
+    "name": "Vehicle Service",
+    "_postman_id": "b4b2f7ee-2e6c-4f8b-8e4a-2e2f6d3f84cf",
+    "description": "Collection for vehicle-service endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Vehicle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleNumber\": \"MH12AB1234\",\n  \"vehicleType\": \"VAN\",\n  \"capacityKg\": 500,\n  \"franchiseId\": \"65f0c2e2e0ab7e9c0ed8a111\",\n  \"driverId\": \"65f0c2e2e0ab7e9c0ed8a222\",\n  \"status\": \"AVAILABLE\",\n  \"currentLocation\": {\n    \"latitude\": 19.076,\n    \"longitude\": 72.8777\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "const jsonData = pm.response.json();",
+              "if (jsonData && jsonData.data && jsonData.data._id) {",
+              "  pm.collectionVariables.set('vehicleId', jsonData.data._id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Vehicles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Vehicles (Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles?status=AVAILABLE&vehicleType=VAN&franchiseId={{franchiseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles"],
+          "query": [
+            {
+              "key": "status",
+              "value": "AVAILABLE"
+            },
+            {
+              "key": "vehicleType",
+              "value": "VAN"
+            },
+            {
+              "key": "franchiseId",
+              "value": "{{franchiseId}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400', function () {",
+              "  pm.expect([200, 400]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Vehicle By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "{{vehicleId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Vehicle",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleNumber\": \"MH12AB1234\",\n  \"vehicleType\": \"TRUCK\",\n  \"capacityKg\": 1200,\n  \"franchiseId\": \"{{franchiseId}}\",\n  \"driverId\": \"{{driverId}}\",\n  \"status\": \"IN_TRANSIT\",\n  \"currentLocation\": {\n    \"latitude\": 28.6139,\n    \"longitude\": 77.209\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "{{vehicleId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Vehicle Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"MAINTENANCE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "{{vehicleId}}", "status"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Soft Delete Vehicle",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["vehicles", "{{vehicleId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3004"
+    },
+    {
+      "key": "vehicleId",
+      "value": ""
+    },
+    {
+      "key": "franchiseId",
+      "value": "65f0c2e2e0ab7e9c0ed8a111"
+    },
+    {
+      "key": "driverId",
+      "value": "65f0c2e2e0ab7e9c0ed8a222"
+    }
+  ]
+}
