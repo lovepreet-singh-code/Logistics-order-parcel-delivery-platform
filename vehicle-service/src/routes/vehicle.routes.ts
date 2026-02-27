@@ -17,4 +17,5 @@ vehicleRouter.put("/:id", updateVehicle);
 vehicleRouter.patch("/:id/status", updateVehicleStatus);
 vehicleRouter.delete("/:id", deleteVehicle);
 
+
 export default vehicleRouter;
