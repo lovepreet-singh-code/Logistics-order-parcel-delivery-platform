@@ -1,0 +1,246 @@
+{
+  "info": {
+    "name": "Planning Service",
+    "_postman_id": "11c1f2a8-e4cf-44ed-af7c-970f5e28640f",
+    "description": "Collection for planning-service endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Planning",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"ORD-20260227-123001\",\n  \"vehicleId\": \"VEH-1001\",\n  \"franchiseId\": \"FR-001\",\n  \"scheduledPickupTime\": \"2026-03-01T10:00:00.000Z\",\n  \"scheduledDeliveryTime\": \"2026-03-01T16:30:00.000Z\",\n  \"routeSummary\": \"Mumbai Hub -> Pune DC via Expressway\",\n  \"estimatedDistanceKm\": 156,\n  \"estimatedDurationMinutes\": 390,\n  \"loadWeightKg\": 420,\n  \"planningStatus\": \"PLANNED\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/planning",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "const jsonData = pm.response.json();",
+              "if (jsonData && jsonData.data && jsonData.data._id) {",
+              "  pm.collectionVariables.set('planningId', jsonData.data._id);",
+              "}",
+              "if (jsonData && jsonData.data && jsonData.data.planningNumber) {",
+              "  pm.collectionVariables.set('planningNumber', jsonData.data.planningNumber);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Planning List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/planning",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Planning List (Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/planning?planningStatus=PLANNED&vehicleId={{vehicleId}}&franchiseId={{franchiseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning"],
+          "query": [
+            {
+              "key": "planningStatus",
+              "value": "PLANNED"
+            },
+            {
+              "key": "vehicleId",
+              "value": "{{vehicleId}}"
+            },
+            {
+              "key": "franchiseId",
+              "value": "{{franchiseId}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400', function () {",
+              "  pm.expect([200, 400]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Planning By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/planning/{{planningId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning", "{{planningId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Planning Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"planningStatus\": \"DISPATCHED\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/planning/{{planningId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning", "{{planningId}}", "status"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Soft Delete Planning",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/planning/{{planningId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["planning", "{{planningId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200/400/404', function () {",
+              "  pm.expect([200, 400, 404]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3006"
+    },
+    {
+      "key": "planningId",
+      "value": ""
+    },
+    {
+      "key": "planningNumber",
+      "value": ""
+    },
+    {
+      "key": "vehicleId",
+      "value": "VEH-1001"
+    },
+    {
+      "key": "franchiseId",
+      "value": "FR-001"
+    }
+  ]
+}
