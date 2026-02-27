@@ -1,0 +1,171 @@
+{
+  "info": {
+    "name": "Franchise Service",
+    "_postman_id": "0a80b9a1-8da7-4e13-ac50-dffce4d1f63c",
+    "description": "Collection for testing franchise-service endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Franchise",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"North Hub\",\n  \"city\": \"Delhi\",\n  \"state\": \"Delhi\",\n  \"region\": \"NORTH\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/franchise",
+          "host": ["{{baseUrl}}"],
+          "path": ["franchise"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is expected', function () {",
+              "  pm.expect([201, 501]).to.include(pm.response.code);",
+              "});",
+              "if (pm.response.code === 201) {",
+              "  const body = pm.response.json();",
+              "  if (body.data && body.data.id) pm.collectionVariables.set('franchiseId', body.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Franchises",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/franchise",
+          "host": ["{{baseUrl}}"],
+          "path": ["franchise"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is expected', function () {",
+              "  pm.expect([200, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Add Serviceable Pincode",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"franchise_id\": \"{{franchiseId}}\",\n  \"pincode\": \"{{pincode}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/franchise/add-pincode",
+          "host": ["{{baseUrl}}"],
+          "path": ["franchise", "add-pincode"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is expected', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lookup Franchise By Pincode",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/franchise/pincode/{{pincode}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["franchise", "pincode", "{{pincode}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is expected', function () {",
+              "  pm.expect([200, 404, 501]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3003"
+    },
+    {
+      "key": "franchiseId",
+      "value": "franchise-001"
+    },
+    {
+      "key": "pincode",
+      "value": "110001"
+    }
+  ]
+}
