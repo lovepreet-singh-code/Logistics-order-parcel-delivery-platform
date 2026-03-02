@@ -10,12 +10,17 @@ export const getUserById = async (
   res: Response,
 ): Promise<void> => {
   const result = await userService.getUserById(req.params.id);
-  res.status(501).json(result);
+  if (result.message === "User not found") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };
 
 export const getUsers = async (_req: Request, res: Response): Promise<void> => {
   const result = await userService.getUsers();
-  res.status(501).json(result);
+  res.status(200).json(result);
 };
 
 export const assignArea = async (
@@ -24,7 +29,12 @@ export const assignArea = async (
 ): Promise<void> => {
   const payload = req.body as AssignAreaPayload;
   const result = await userService.assignArea(payload);
-  res.status(501).json(result);
+  if (result.message === "User not found") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };
 
 export const updateUser = async (
@@ -33,7 +43,12 @@ export const updateUser = async (
 ): Promise<void> => {
   const payload = req.body as UpdateUserPayload;
   const result = await userService.updateUser(req.params.id, payload);
-  res.status(501).json(result);
+  if (result.message === "User not found") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };
 
 export const deleteUser = async (
@@ -41,5 +56,10 @@ export const deleteUser = async (
   res: Response,
 ): Promise<void> => {
   const result = await userService.deleteUser(req.params.id);
-  res.status(501).json(result);
+  if (result.message === "User not found") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };

@@ -9,7 +9,6 @@ type ErrorResponse = {
 
 const isProd = process.env.NODE_ENV === "production";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorMiddleware: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof MongooseError.ValidationError) {
     const details = Object.values(err.errors).map((e) => e.message);

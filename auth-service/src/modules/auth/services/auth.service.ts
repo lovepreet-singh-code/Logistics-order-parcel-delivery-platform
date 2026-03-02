@@ -15,10 +15,19 @@ type AuthResponse = {
   message?: string;
 };
 
-type JwtTokenPayload = JwtPayload & {
-  userId?: string;
-  email?: string;
-  exp?: number;
+type RefreshTokenResponse =
+  | {
+      accessToken: string;
+      message?: undefined;
+    }
+  | {
+      message: string;
+      accessToken?: undefined;
+    };
+
+type RefreshTokenPayload = JwtPayload & {
+  userId: string;
+  email: string;
 };
 
 const AUTH_MESSAGES = {
@@ -34,9 +43,10 @@ const AUTH_MESSAGES = {
 };
 
 const isRefreshPayload = (
-  decoded: JwtPayload | string,
-): decoded is JwtTokenPayload => {
+  decoded: JwtPayload | string | null,
+): decoded is RefreshTokenPayload => {
   return (
+    decoded !== null &&
     typeof decoded !== "string" &&
     typeof decoded.userId === "string" &&
     typeof decoded.email === "string"
@@ -89,7 +99,7 @@ class AuthService {
     return { accessToken };
   }
 
-  async refreshToken(token: string): Promise<AuthResponse> {
+  async refreshToken(token: string): Promise<RefreshTokenResponse> {
     try {
       const refreshSecret =
         process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET;

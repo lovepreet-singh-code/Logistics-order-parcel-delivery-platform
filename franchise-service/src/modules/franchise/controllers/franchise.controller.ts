@@ -11,7 +11,7 @@ export const createFranchise = async (
 ): Promise<void> => {
   const payload = req.body as CreateFranchisePayload;
   const result = await franchiseService.createFranchise(payload);
-  res.status(501).json(result);
+  res.status(201).json(result);
 };
 
 export const getFranchises = async (
@@ -19,13 +19,18 @@ export const getFranchises = async (
   res: Response,
 ): Promise<void> => {
   const result = await franchiseService.getFranchises();
-  res.status(501).json(result);
+  res.status(200).json(result);
 };
 
 export const addPincode = async (req: Request, res: Response): Promise<void> => {
   const payload = req.body as AddPincodePayload;
   const result = await franchiseService.addPincode(payload);
-  res.status(501).json(result);
+  if (result.message === "Franchise not found") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };
 
 export const lookupFranchiseByPincode = async (
@@ -35,5 +40,10 @@ export const lookupFranchiseByPincode = async (
   const result = await franchiseService.lookupFranchiseByPincode(
     req.params.code,
   );
-  res.status(501).json(result);
+  if (result.message === "Franchise not found for provided pincode") {
+    res.status(404).json(result);
+    return;
+  }
+
+  res.status(200).json(result);
 };

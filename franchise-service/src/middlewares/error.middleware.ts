@@ -7,7 +7,6 @@ type ErrorResponse = {
 
 const isProd = process.env.NODE_ENV === "production";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorMiddleware: ErrorRequestHandler = (err, _req, res, _next) => {
   const response: ErrorResponse = {
     message: "Internal server error",
