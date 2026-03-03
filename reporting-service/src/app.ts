@@ -1,5 +1,7 @@
 import express from "express";
-import reportsRouter from "./routes/reporting.routes";
+import metricsRouter from "./routes/metrics.routes";
+import { errorMiddleware } from "./middlewares/error.middleware";
+import { notFoundMiddleware } from "./middlewares/notFound.middleware";
 
 const app = express();
 
@@ -10,6 +12,9 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use("/reports", reportsRouter);
+app.use("/metrics", metricsRouter);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 export default app;

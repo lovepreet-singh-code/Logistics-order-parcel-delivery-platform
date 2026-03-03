@@ -1,41 +1,13 @@
-import {
-  type HydratedDocument,
-  type Model,
-  Schema,
-  model,
-} from "mongoose";
+import { Schema, model } from "mongoose";
 
-export interface IProcessedEvent {
-  eventId: string;
-  processedAt: Date;
-}
-
-export type ProcessedEventDocument = HydratedDocument<IProcessedEvent>;
-
-type ProcessedEventModel = Model<IProcessedEvent>;
-
-const processedEventSchema = new Schema<IProcessedEvent, ProcessedEventModel>(
+const processedEventSchema = new Schema(
   {
-    eventId: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    processedAt: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
+    eventId: { type: String, required: true, unique: true, index: true },
+    correlationId: { type: String, required: true, index: true },
+    topic: { type: String, required: true },
+    processedAt: { type: Date, default: Date.now },
   },
-  {
-    versionKey: false,
-  },
+  { collection: "processed_events", versionKey: false },
 );
 
-processedEventSchema.index({ eventId: 1 }, { unique: true });
-
-export const ProcessedEvent = model<IProcessedEvent, ProcessedEventModel>(
-  "ProcessedEvent",
-  processedEventSchema,
-);
+export const ProcessedEvent = model("ProcessedEvent", processedEventSchema);

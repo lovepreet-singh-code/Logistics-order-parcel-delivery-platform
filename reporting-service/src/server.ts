@@ -1,18 +1,22 @@
 import app from "./app";
 import { connectDatabase } from "./config/db";
+import { redisClient } from "./config/redis";
 import { env } from "./config/env";
 import { connectConsumer, disconnectConsumer } from "./kafka/consumer";
+import { logError, logInfo } from "./utils/logger";
 
 const startServer = async (): Promise<void> => {
   await connectDatabase();
   await connectConsumer();
+
   app.listen(env.port, () => {
-    console.info(`Reporting service running on port ${env.port}`);
+    logInfo("Reporting service running", { port: env.port });
   });
 };
 
 const shutdown = async (): Promise<void> => {
   await disconnectConsumer();
+  await redisClient.quit();
   process.exit(0);
 };
 
@@ -25,6 +29,8 @@ process.on("SIGTERM", () => {
 });
 
 void startServer().catch((error: unknown) => {
-  console.error(error);
+  logError("Failed to start reporting service", {
+    error: error instanceof Error ? error.message : "Unknown error",
+  });
   process.exit(1);
 });

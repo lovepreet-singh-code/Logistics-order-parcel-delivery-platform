@@ -28,9 +28,28 @@ const getMongoUri = (): string => {
   return mongoUri;
 };
 
+const getCacheTtl = (): number => {
+  const raw = process.env.CACHE_TTL_SECONDS;
+
+  if (!raw) {
+    return 60;
+  }
+
+  const parsed = Number(raw);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error("Invalid CACHE_TTL_SECONDS value");
+  }
+
+  return parsed;
+};
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: getPort(),
   mongoUri: getMongoUri(),
   kafkaBroker: process.env.KAFKA_BROKER || "kafka:9092",
+  redisHost: process.env.REDIS_HOST || "redis",
+  redisPort: Number(process.env.REDIS_PORT) || 6379,
+  cacheTtlSeconds: getCacheTtl(),
 };
