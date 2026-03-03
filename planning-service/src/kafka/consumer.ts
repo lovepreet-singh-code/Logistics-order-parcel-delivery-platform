@@ -1,4 +1,6 @@
 import { kafka } from "./kafka.config";
+import { publishEvent } from "./producer";
+import { randomUUID } from "crypto";
 
 type DomainEventPayload = {
   eventType?: string;
@@ -43,9 +45,22 @@ export const connectConsumer = async (): Promise<void> => {
         return;
       }
 
-      console.info(
-        `Planning received OrderCreated event for orderId: ${orderId}`,
-      );
+      const planningId = randomUUID();
+      const planningCreatedEvent = {
+        eventId: randomUUID(),
+        eventType: "PlanningCreated",
+        eventVersion: 1,
+        occurredAt: new Date().toISOString(),
+        producer: "planning-service",
+        correlationId: orderId,
+        data: {
+          planningId,
+          orderId,
+        },
+      };
+
+      await publishEvent("logistics.planning.events", planningCreatedEvent);
+      console.info(`PlanningCreated event published for orderId: ${orderId}`);
     },
   });
 
