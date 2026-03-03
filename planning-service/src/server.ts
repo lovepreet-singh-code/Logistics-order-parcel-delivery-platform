@@ -1,14 +1,26 @@
 import app from "./app";
 import { connectDatabase } from "./config/db";
 import { env } from "./config/env";
+import { connectConsumer, disconnectConsumer } from "./kafka/consumer";
 
 const startServer = async (): Promise<void> => {
   await connectDatabase();
-  console.log(`MongoDB connected`);
-  app.listen(env.port, () => {
-    console.log(`Planning service running on port ${env.port}`);
-  });
+  await connectConsumer();
+  app.listen(env.port);
 };
+
+const shutdown = async (): Promise<void> => {
+  await disconnectConsumer();
+  process.exit(0);
+};
+
+process.on("SIGINT", () => {
+  void shutdown();
+});
+
+process.on("SIGTERM", () => {
+  void shutdown();
+});
 
 void startServer().catch(() => {
   process.exit(1);
