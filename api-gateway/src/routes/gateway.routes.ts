@@ -4,31 +4,21 @@ import { env } from "../config/env";
 
 const gatewayRouter = Router();
 
-const createServiceProxy = (target: string, basePath: string) =>
+const createServiceProxy = (target: string) =>
   createProxyMiddleware({
     target,
     changeOrigin: true,
-    pathRewrite: (path) => path.replace(new RegExp(`^${basePath}`), ""),
   });
 
-gatewayRouter.use("/auth", createServiceProxy(env.authServiceUrl, "/auth"));
-gatewayRouter.use("/users", createServiceProxy(env.userServiceUrl, "/users"));
-gatewayRouter.use(
-  "/franchise",
-  createServiceProxy(env.franchiseServiceUrl, "/franchise"),
-);
-gatewayRouter.use(
-  "/vehicles",
-  createServiceProxy(env.vehicleServiceUrl, "/vehicles"),
-);
-gatewayRouter.use("/orders", createServiceProxy(env.orderServiceUrl, "/orders"));
-gatewayRouter.use(
-  "/planning",
-  createServiceProxy(env.planningServiceUrl, "/planning"),
-);
+gatewayRouter.use("/auth", createServiceProxy(env.authServiceUrl));
+gatewayRouter.use("/users", createServiceProxy(env.userServiceUrl));
+gatewayRouter.use("/franchise", createServiceProxy(env.franchiseServiceUrl));
+gatewayRouter.use("/vehicles", createServiceProxy(env.vehicleServiceUrl));
+gatewayRouter.use("/orders", createServiceProxy(env.orderServiceUrl));
+gatewayRouter.use("/planning", createServiceProxy(env.planningServiceUrl));
 gatewayRouter.use(
   "/notifications",
-  createServiceProxy(env.notificationServiceUrl, "/notifications"),
+  createServiceProxy(env.notificationServiceUrl),
 );
 
 export default gatewayRouter;

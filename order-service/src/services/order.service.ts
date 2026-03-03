@@ -11,6 +11,8 @@ import {
   type ParcelType,
 } from "../models/order.model";
 import { AppError } from "../middlewares/error.middleware";
+import { createEventEnvelope } from "../kafka/eventEnvelope";
+import { publishEvent } from "../kafka/producer";
 
 export interface AddressPayload {
   name: string;
@@ -308,6 +310,15 @@ export const orderService = {
       status: normalizedPayload.status ?? "CREATED",
       isActive: true,
     });
+
+    const orderId = order.id;
+    const event = createEventEnvelope({
+      eventType: "OrderCreated",
+      correlationId: orderId,
+      data: order.toObject(),
+    });
+
+    await publishEvent("logistics.order.events", event);
 
     return order;
   },
