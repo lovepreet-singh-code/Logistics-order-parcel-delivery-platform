@@ -1,4 +1,5 @@
 import { kafka } from "./kafka.config";
+import { redisClient } from "../config/redis";
 import { Tracking } from "../models/tracking.model";
 import { ProcessedEvent } from "../models/processedEvent.model";
 import { connectProducer, disconnectProducer, publishEvent } from "./producer";
@@ -140,6 +141,7 @@ const appendTrackingEvent = async (event: DomainEvent): Promise<void> => {
     receivedAt: new Date(),
   });
 
+  await redisClient.del(`tracking:${validEvent.correlationId}`);
   await markEventProcessed(validEvent.eventId);
 };
 
