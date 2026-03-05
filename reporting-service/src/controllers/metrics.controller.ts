@@ -1,30 +1,42 @@
 import type { Request, Response } from "express";
+import { getCached, setCached } from "../cache/reporting.cache";
 import {
   getDailyMetrics,
   getDeliveryMetrics,
   getOrderMetrics,
-  getRevenueMetrics,
-  getSystemMetrics,
 } from "../services/metrics.service";
 import { fail, ok } from "../utils/apiResponse";
 
-const isValidDate = (value: string): boolean => {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-};
+const isValidDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 export const fetchOrderMetrics = async (_req: Request, res: Response): Promise<void> => {
+  const key = "reporting:orders";
+  const cached = await getCached<unknown>(key);
+
+  if (cached) {
+    res.status(200).json(cached);
+    return;
+  }
+
   const metrics = await getOrderMetrics();
-  res.status(200).json(ok("Order metrics fetched", metrics));
+  const payload = ok("Order metrics fetched", metrics);
+  await setCached(key, payload);
+  res.status(200).json(payload);
 };
 
 export const fetchDeliveryMetrics = async (_req: Request, res: Response): Promise<void> => {
-  const metrics = await getDeliveryMetrics();
-  res.status(200).json(ok("Delivery metrics fetched", metrics));
-};
+  const key = "reporting:deliveries";
+  const cached = await getCached<unknown>(key);
 
-export const fetchRevenueMetrics = async (_req: Request, res: Response): Promise<void> => {
-  const metrics = await getRevenueMetrics();
-  res.status(200).json(ok("Revenue metrics fetched", metrics));
+  if (cached) {
+    res.status(200).json(cached);
+    return;
+  }
+
+  const metrics = await getDeliveryMetrics();
+  const payload = ok("Delivery metrics fetched", metrics);
+  await setCached(key, payload);
+  res.status(200).json(payload);
 };
 
 export const fetchDailyMetrics = async (req: Request, res: Response): Promise<void> => {
@@ -35,11 +47,16 @@ export const fetchDailyMetrics = async (req: Request, res: Response): Promise<vo
     return;
   }
 
-  const metrics = await getDailyMetrics(date);
-  res.status(200).json(ok("Daily metrics fetched", metrics));
-};
+  const key = `reporting:daily:${date}`;
+  const cached = await getCached<unknown>(key);
 
-export const fetchSystemMetrics = async (_req: Request, res: Response): Promise<void> => {
-  const metrics = await getSystemMetrics();
-  res.status(200).json(ok("System metrics fetched", metrics));
+  if (cached) {
+    res.status(200).json(cached);
+    return;
+  }
+
+  const metrics = await getDailyMetrics(date);
+  const payload = ok("Daily metrics fetched", metrics);
+  await setCached(key, payload);
+  res.status(200).json(payload);
 };
