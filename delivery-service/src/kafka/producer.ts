@@ -1,4 +1,10 @@
 import { kafka } from "./kafka.config";
+import { logInfo } from "../utils/logger";
+
+type EventPayload = {
+  eventType?: string;
+  correlationId?: string;
+};
 
 const producer = kafka.producer();
 
@@ -10,6 +16,7 @@ export const connectProducer = async (): Promise<void> => {
   }
 
   await producer.connect();
+  logInfo("Kafka producer connected");
   isConnected = true;
 };
 
@@ -19,6 +26,7 @@ export const disconnectProducer = async (): Promise<void> => {
   }
 
   await producer.disconnect();
+  logInfo("Kafka producer disconnected");
   isConnected = false;
 };
 
@@ -27,8 +35,18 @@ export const publishEvent = async (
   payload: unknown,
   key?: string,
 ): Promise<void> => {
-  await producer.send({
+  const eventPayload = payload as EventPayload;
+
+  const metadata = await producer.send({
     topic,
     messages: [{ key, value: JSON.stringify(payload) }],
   });
+
+  for (const entry of metadata) {
+    logInfo("Kafka event produced", eventPayload.correlationId, {
+      topic: entry.topicName,
+      partition: entry.partition,
+      eventType: eventPayload.eventType,
+    });
+  }
 };

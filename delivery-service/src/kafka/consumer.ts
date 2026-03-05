@@ -1,5 +1,6 @@
 import { kafka } from "./kafka.config";
 import { registerPlanningConsumer } from "../consumers/planning.consumer";
+import { logInfo } from "../utils/logger";
 
 const consumer = kafka.consumer({ groupId: "delivery-service-group" });
 
@@ -11,6 +12,8 @@ export const connectConsumer = async (): Promise<void> => {
   }
 
   await consumer.connect();
+  logInfo("Kafka consumer connected");
+
   await registerPlanningConsumer(consumer);
   isConnected = true;
 };
@@ -21,5 +24,6 @@ export const disconnectConsumer = async (): Promise<void> => {
   }
 
   await consumer.disconnect();
+  logInfo("Kafka consumer disconnected");
   isConnected = false;
 };

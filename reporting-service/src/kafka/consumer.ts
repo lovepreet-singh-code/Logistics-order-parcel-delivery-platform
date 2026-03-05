@@ -10,7 +10,7 @@ import {
   handlePlanningEvent,
 } from "../consumers/planning.consumer";
 import type { DomainEvent } from "../services/projection.service";
-import { logError } from "../utils/logger";
+import { logError, logInfo } from "../utils/logger";
 
 const consumer = kafka.consumer({ groupId: "reporting-service-group" });
 
@@ -74,8 +74,9 @@ const processWithRetry = async (
     } catch (error) {
       if (attempt === 3) {
         await publishToDlq(sourceTopic, event, error);
-        logError("Reporting event processing failed", {
+        logError("Reporting event processing failed", event.correlationId, {
           sourceTopic,
+          eventType: event.eventType,
           error: error instanceof Error ? error.message : "Unknown error",
         });
         return;
@@ -99,7 +100,7 @@ export const connectConsumer = async (): Promise<void> => {
   }
 
   await consumer.run({
-    eachMessage: async ({ topic, message }) => {
+    eachMessage: async ({ topic, message, partition }) => {
       if (!message.value) {
         return;
       }
@@ -109,6 +110,12 @@ export const connectConsumer = async (): Promise<void> => {
       if (!parsed) {
         return;
       }
+
+      logInfo("Kafka event consumed", parsed.correlationId, {
+        eventType: parsed.eventType,
+        topic,
+        partition,
+      });
 
       await processWithRetry(topic, parsed);
     },

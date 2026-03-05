@@ -10,7 +10,7 @@ const startServer = async (): Promise<void> => {
   await connectConsumer();
 
   app.listen(env.port, () => {
-    logInfo("Reporting service running", { port: env.port });
+    logInfo("Reporting service running", undefined, { port: env.port });
   });
 };
 
@@ -29,7 +29,7 @@ process.on("SIGTERM", () => {
 });
 
 void startServer().catch((error: unknown) => {
-  logError("Failed to start reporting service", {
+  logError("Failed to start reporting service", undefined, {
     error: error instanceof Error ? error.message : "Unknown error",
   });
   process.exit(1);

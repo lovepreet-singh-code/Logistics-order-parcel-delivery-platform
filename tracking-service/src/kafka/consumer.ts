@@ -4,6 +4,7 @@ import { Tracking } from "../models/tracking.model";
 import { ProcessedEvent } from "../models/processedEvent.model";
 import { connectProducer, disconnectProducer, publishEvent } from "./producer";
 import { processDeliveryTimelineEvent } from "../consumers/delivery.consumer";
+import { logError, logInfo } from "../utils/logger";
 
 type DomainEvent = {
   eventId?: string;
@@ -158,7 +159,11 @@ const processWithRetry = async (
     } catch (error) {
       if (attempt === 3) {
         await publishToDlq(sourceTopic, event, error);
-        console.error(error);
+        logError("Kafka consume failed", event.correlationId, {
+          topic: sourceTopic,
+          eventType: event.eventType,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
         return;
       }
 
@@ -180,7 +185,7 @@ export const connectConsumer = async (): Promise<void> => {
   }
 
   await consumer.run({
-    eachMessage: async ({ topic, message }) => {
+    eachMessage: async ({ topic, message, partition }) => {
       if (!message.value) {
         return;
       }
@@ -190,6 +195,12 @@ export const connectConsumer = async (): Promise<void> => {
       if (!parsed) {
         return;
       }
+
+      logInfo("Kafka event consumed", parsed.correlationId, {
+        topic,
+        partition,
+        eventType: parsed.eventType,
+      });
 
       await processWithRetry(topic, parsed);
     },

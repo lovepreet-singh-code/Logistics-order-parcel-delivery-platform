@@ -23,7 +23,7 @@ export const metricsCache = (cacheKeyBuilder: (req: Request) => string) => {
 
       next();
     } catch (error) {
-      logError("Redis cache middleware error", {
+      logError("Redis cache middleware error", req.correlationId, {
         error: error instanceof Error ? error.message : "Unknown error",
       });
       next();

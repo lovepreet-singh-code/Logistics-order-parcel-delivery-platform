@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from "express";
-import { fail } from "../utils/apiResponse";
 import { logError } from "../utils/logger";
 
 export const errorMiddleware = (
@@ -10,10 +9,12 @@ export const errorMiddleware = (
 ): void => {
   const message = error instanceof Error ? error.message : "Internal server error";
 
-  logError("Unhandled API error", req.correlationId, {
-    message,
+  logError(message, req.correlationId, {
     stack: error instanceof Error ? error.stack : undefined,
   });
 
-  res.status(500).json(fail(message));
+  res.status(500).json({
+    success: false,
+    message,
+  });
 };

@@ -2,12 +2,13 @@ import app from "./app";
 import { connectDatabase } from "./config/db";
 import { env } from "./config/env";
 import { connectConsumer, disconnectConsumer } from "./kafka/consumer";
+import { logError, logInfo } from "./utils/logger";
 
 const startServer = async (): Promise<void> => {
   await connectDatabase();
   await connectConsumer();
   app.listen(env.port, () => {
-    console.info(`Tracking service running on port ${env.port}`);
+    logInfo(`Tracking service running on port ${env.port}`);
   });
 };
 
@@ -25,6 +26,9 @@ process.on("SIGTERM", () => {
 });
 
 void startServer().catch((error: unknown) => {
-  console.error(error);
+  logError("Failed to start tracking service", undefined, {
+    error: error instanceof Error ? error.message : "Unknown error",
+    stack: error instanceof Error ? error.stack : undefined,
+  });
   process.exit(1);
 });

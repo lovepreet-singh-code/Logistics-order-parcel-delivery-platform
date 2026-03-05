@@ -4,6 +4,7 @@ import { redisClient } from "./config/redis";
 import { env } from "./config/env";
 import { connectConsumer, disconnectConsumer } from "./kafka/consumer";
 import { connectProducer, disconnectProducer } from "./kafka/producer";
+import { logError, logInfo } from "./utils/logger";
 
 const startServer = async (): Promise<void> => {
   await connectDatabase();
@@ -12,7 +13,7 @@ const startServer = async (): Promise<void> => {
   await connectConsumer();
 
   app.listen(env.port, () => {
-    console.info(`Delivery service running on port ${env.port}`);
+    logInfo(`Delivery service running on port ${env.port}`);
   });
 };
 
@@ -32,6 +33,9 @@ process.on("SIGTERM", () => {
 });
 
 void startServer().catch((error: unknown) => {
-  console.error(error);
+  logError("Failed to start delivery service", undefined, {
+    error: error instanceof Error ? error.message : "Unknown error",
+    stack: error instanceof Error ? error.stack : undefined,
+  });
   process.exit(1);
 });

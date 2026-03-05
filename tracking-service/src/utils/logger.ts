@@ -2,7 +2,7 @@ import pino from "pino";
 
 const logger = pino();
 
-const SERVICE_NAME = "reporting-service";
+const SERVICE_NAME = "tracking-service";
 
 export const logInfo = (
   message: string,

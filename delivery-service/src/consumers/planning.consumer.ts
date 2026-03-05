@@ -5,6 +5,7 @@ import {
 } from "../events/planning.events";
 import { createDeliveryFromPlan } from "../services/delivery.service";
 import { wait } from "../utils/wait";
+import { logError, logInfo } from "../utils/logger";
 
 const TOPIC = "logistics.planning.events";
 
@@ -23,7 +24,11 @@ const processWithRetry = async (event: PlanConfirmedEvent): Promise<void> => {
       return;
     } catch (error) {
       if (attempt === 3) {
-        console.error("Failed to process PLAN_CONFIRMED event", error);
+        logError("Failed to process PLAN_CONFIRMED event", event.correlationId, {
+          eventType: event.eventType,
+          topic: TOPIC,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
         return;
       }
 
@@ -38,7 +43,7 @@ export const registerPlanningConsumer = async (
   await consumer.subscribe({ topic: TOPIC, fromBeginning: false });
 
   await consumer.run({
-    eachMessage: async ({ message }) => {
+    eachMessage: async ({ message, partition }) => {
       if (!message.value) {
         return;
       }
@@ -52,6 +57,12 @@ export const registerPlanningConsumer = async (
       if (event.eventType !== PLANNING_EVENTS.PLAN_CONFIRMED) {
         return;
       }
+
+      logInfo("Kafka event consumed", event.correlationId, {
+        eventType: event.eventType,
+        topic: TOPIC,
+        partition,
+      });
 
       await processWithRetry(event);
     },
