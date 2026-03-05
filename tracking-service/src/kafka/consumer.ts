@@ -3,6 +3,7 @@ import { redisClient } from "../config/redis";
 import { Tracking } from "../models/tracking.model";
 import { ProcessedEvent } from "../models/processedEvent.model";
 import { connectProducer, disconnectProducer, publishEvent } from "./producer";
+import { processDeliveryTimelineEvent } from "../consumers/delivery.consumer";
 
 type DomainEvent = {
   eventId?: string;
@@ -152,6 +153,7 @@ const processWithRetry = async (
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       await appendTrackingEvent(event);
+      await processDeliveryTimelineEvent(sourceTopic, event);
       return;
     } catch (error) {
       if (attempt === 3) {

@@ -8,6 +8,11 @@ import {
 import { publishEvent } from "../kafka/producer";
 import { DELIVERY_EVENTS } from "../events/delivery.events";
 import { buildEventEnvelope } from "../utils/eventEnvelope";
+import {
+  removeActiveDelivery,
+  setActiveDelivery,
+  updateActiveDelivery,
+} from "../cache/delivery.cache";
 
 const DELIVERY_EVENTS_TOPIC = "logistics.delivery.events";
 
@@ -97,6 +102,18 @@ const transitionDelivery = async (
 
   if (!updated) {
     throw new Error(`Failed to update delivery for orderId: ${orderId}`);
+  }
+
+  if (updated.currentState === DELIVERY_STATES.ASSIGNED) {
+    await setActiveDelivery(updated);
+  } else if (updated.currentState === DELIVERY_STATES.OUT_FOR_DELIVERY) {
+    await updateActiveDelivery(updated);
+  } else if (
+    updated.currentState === DELIVERY_STATES.DELIVERED ||
+    updated.currentState === DELIVERY_STATES.FAILED ||
+    updated.currentState === DELIVERY_STATES.RETURNED
+  ) {
+    await removeActiveDelivery(orderId);
   }
 
   await emitDeliveryEvent(orderId, eventType, {
