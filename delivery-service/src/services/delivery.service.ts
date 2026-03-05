@@ -13,6 +13,7 @@ import {
   setActiveDelivery,
   updateActiveDelivery,
 } from "../cache/delivery.cache";
+import { AppError } from "../utils/appError";
 
 const DELIVERY_EVENTS_TOPIC = "logistics.delivery.events";
 
@@ -21,7 +22,7 @@ const parseDate = (value: string | undefined, fallback: string): Date => {
   const date = new Date(source);
 
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Invalid plannedAt/occurredAt date");
+    throw new AppError("Invalid plannedAt/occurredAt date", 400, "INVALID_DATE");
   }
 
   return date;
@@ -29,27 +30,27 @@ const parseDate = (value: string | undefined, fallback: string): Date => {
 
 const validateEvent = (event: PlanConfirmedEvent): void => {
   if (!event.eventId?.trim()) {
-    throw new Error("Invalid eventId");
+    throw new AppError("Invalid eventId", 400, "INVALID_EVENT_ID");
   }
 
   if (!event.data?.orderId?.trim()) {
-    throw new Error("Invalid orderId");
+    throw new AppError("Invalid orderId", 400, "INVALID_ORDER_ID");
   }
 
   if (!event.data.franchiseId?.trim()) {
-    throw new Error("Invalid franchiseId");
+    throw new AppError("Invalid franchiseId", 400, "INVALID_FRANCHISE_ID");
   }
 
   if (!event.data.vehicleId?.trim()) {
-    throw new Error("Invalid vehicleId");
+    throw new AppError("Invalid vehicleId", 400, "INVALID_VEHICLE_ID");
   }
 
   if (!event.data.driverId?.trim()) {
-    throw new Error("Invalid driverId");
+    throw new AppError("Invalid driverId", 400, "INVALID_DRIVER_ID");
   }
 
   if (!event.occurredAt?.trim()) {
-    throw new Error("Invalid occurredAt");
+    throw new AppError("Invalid occurredAt", 400, "INVALID_OCCURRED_AT");
   }
 };
 
@@ -57,7 +58,11 @@ const getDeliveryByOrderId = async (orderId: string) => {
   const delivery = await Delivery.findOne({ orderId }).exec();
 
   if (!delivery) {
-    throw new Error(`Delivery not found for orderId: ${orderId}`);
+    throw new AppError(
+      `Delivery not found for orderId: ${orderId}`,
+      404,
+      "DELIVERY_NOT_FOUND",
+    );
   }
 
   return delivery;
@@ -66,14 +71,17 @@ const getDeliveryByOrderId = async (orderId: string) => {
 const emitDeliveryEvent = async (
   orderId: string,
   eventType: string,
-  data: Record<string, unknown>,
+  data: {
+    orderId: string;
+    driverId: string;
+    vehicleId: string;
+    timestamp: string;
+    correlationId: string;
+    state: string;
+    reason?: string;
+  },
 ): Promise<void> => {
-  const event = buildEventEnvelope(
-    eventType,
-    "delivery-service",
-    orderId,
-    data,
-  );
+  const event = buildEventEnvelope(eventType, "delivery-service", orderId, data);
 
   await publishEvent(DELIVERY_EVENTS_TOPIC, event, orderId);
 };
@@ -101,7 +109,11 @@ const transitionDelivery = async (
   ).lean();
 
   if (!updated) {
-    throw new Error(`Failed to update delivery for orderId: ${orderId}`);
+    throw new AppError(
+      `Failed to update delivery for orderId: ${orderId}`,
+      500,
+      "DELIVERY_UPDATE_FAILED",
+    );
   }
 
   if (updated.currentState === DELIVERY_STATES.ASSIGNED) {
@@ -117,14 +129,25 @@ const transitionDelivery = async (
   }
 
   await emitDeliveryEvent(orderId, eventType, {
+    eventType,
     orderId,
-    currentState: updated.currentState,
-    version: updated.version,
-    plannedAt: updated.plannedAt,
-    franchiseId: updated.franchiseId,
-    vehicleId: updated.vehicleId,
     driverId: updated.driverId,
-    failureReason: updated.failureReason,
+    vehicleId: updated.vehicleId,
+    timestamp: new Date(updated.updatedAt ?? new Date()).toISOString(),
+    correlationId: orderId,
+    state: updated.currentState,
+    reason:
+      typeof updated.failureReason === "string"
+        ? updated.failureReason
+        : undefined,
+  } as unknown as {
+    orderId: string;
+    driverId: string;
+    vehicleId: string;
+    timestamp: string;
+    correlationId: string;
+    state: string;
+    reason?: string;
   });
 };
 
@@ -166,12 +189,20 @@ export const createDeliveryFromPlan = async (
   ).exec();
 };
 
-export const assignDelivery = async (orderId: string): Promise<void> => {
+export const assignDelivery = async (
+  orderId: string,
+  driverId: string,
+  vehicleId: string,
+): Promise<void> => {
   await transitionDelivery(
     orderId,
     DELIVERY_STATES.ASSIGNED,
     DELIVERY_EVENTS.DELIVERY_ASSIGNED,
-    { failureReason: undefined },
+    {
+      driverId,
+      vehicleId,
+      failureReason: undefined,
+    },
   );
 };
 
@@ -196,7 +227,11 @@ export const failDelivery = async (
   reason: string,
 ): Promise<void> => {
   if (!reason.trim()) {
-    throw new Error("Failure reason is required");
+    throw new AppError(
+      "Failure reason is required",
+      400,
+      "FAILURE_REASON_REQUIRED",
+    );
   }
 
   await transitionDelivery(
