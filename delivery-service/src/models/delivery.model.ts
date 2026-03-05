@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
+import { DELIVERY_STATES } from "../state-machine/delivery.state-machine";
 
-export type DeliveryState = "PLANNED";
+export type DeliveryState = keyof typeof DELIVERY_STATES;
 
 const deliverySchema = new Schema(
   {
@@ -11,11 +12,12 @@ const deliverySchema = new Schema(
     currentState: {
       type: String,
       required: true,
-      enum: ["PLANNED"],
-      default: "PLANNED",
+      enum: Object.values(DELIVERY_STATES),
+      default: DELIVERY_STATES.PLANNED,
       index: true,
     },
     plannedAt: { type: Date, required: true },
+    failureReason: { type: String, required: false },
     version: { type: Number, required: true, default: 1 },
   },
   {

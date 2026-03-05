@@ -22,9 +22,13 @@ export const disconnectProducer = async (): Promise<void> => {
   isConnected = false;
 };
 
-export const publishEvent = async (topic: string, payload: unknown): Promise<void> => {
+export const publishEvent = async (
+  topic: string,
+  payload: unknown,
+  key?: string,
+): Promise<void> => {
   await producer.send({
     topic,
-    messages: [{ value: JSON.stringify(payload) }],
+    messages: [{ key, value: JSON.stringify(payload) }],
   });
 };

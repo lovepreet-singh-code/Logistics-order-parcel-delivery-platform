@@ -1,6 +1,15 @@
 import { Delivery } from "../models/delivery.model";
 import { ProcessedEvent } from "../models/processedEvent.model";
 import type { PlanConfirmedEvent } from "../events/planning.events";
+import {
+  DELIVERY_STATES,
+  validateTransition,
+} from "../state-machine/delivery.state-machine";
+import { publishEvent } from "../kafka/producer";
+import { DELIVERY_EVENTS } from "../events/delivery.events";
+import { buildEventEnvelope } from "../utils/eventEnvelope";
+
+const DELIVERY_EVENTS_TOPIC = "logistics.delivery.events";
 
 const parseDate = (value: string | undefined, fallback: string): Date => {
   const source = value ?? fallback;
@@ -39,6 +48,69 @@ const validateEvent = (event: PlanConfirmedEvent): void => {
   }
 };
 
+const getDeliveryByOrderId = async (orderId: string) => {
+  const delivery = await Delivery.findOne({ orderId }).exec();
+
+  if (!delivery) {
+    throw new Error(`Delivery not found for orderId: ${orderId}`);
+  }
+
+  return delivery;
+};
+
+const emitDeliveryEvent = async (
+  orderId: string,
+  eventType: string,
+  data: Record<string, unknown>,
+): Promise<void> => {
+  const event = buildEventEnvelope(
+    eventType,
+    "delivery-service",
+    orderId,
+    data,
+  );
+
+  await publishEvent(DELIVERY_EVENTS_TOPIC, event, orderId);
+};
+
+const transitionDelivery = async (
+  orderId: string,
+  nextState: (typeof DELIVERY_STATES)[keyof typeof DELIVERY_STATES],
+  eventType: string,
+  extraSet: Record<string, unknown> = {},
+): Promise<void> => {
+  const delivery = await getDeliveryByOrderId(orderId);
+  validateTransition(delivery.currentState, nextState);
+
+  const updated = await Delivery.findOneAndUpdate(
+    { orderId },
+    {
+      $set: {
+        currentState: nextState,
+        ...extraSet,
+        updatedAt: new Date(),
+      },
+      $inc: { version: 1 },
+    },
+    { new: true },
+  ).lean();
+
+  if (!updated) {
+    throw new Error(`Failed to update delivery for orderId: ${orderId}`);
+  }
+
+  await emitDeliveryEvent(orderId, eventType, {
+    orderId,
+    currentState: updated.currentState,
+    version: updated.version,
+    plannedAt: updated.plannedAt,
+    franchiseId: updated.franchiseId,
+    vehicleId: updated.vehicleId,
+    driverId: updated.driverId,
+    failureReason: updated.failureReason,
+  });
+};
+
 export const createDeliveryFromPlan = async (
   event: PlanConfirmedEvent,
 ): Promise<void> => {
@@ -62,7 +134,7 @@ export const createDeliveryFromPlan = async (
         franchiseId: event.data.franchiseId.trim(),
         vehicleId: event.data.vehicleId.trim(),
         driverId: event.data.driverId.trim(),
-        currentState: "PLANNED",
+        currentState: DELIVERY_STATES.PLANNED,
         plannedAt: parseDate(event.data.plannedAt, event.occurredAt),
         version: 1,
       },
@@ -75,4 +147,53 @@ export const createDeliveryFromPlan = async (
     { $setOnInsert: { eventId, processedAt: new Date() } },
     { upsert: true },
   ).exec();
+};
+
+export const assignDelivery = async (orderId: string): Promise<void> => {
+  await transitionDelivery(
+    orderId,
+    DELIVERY_STATES.ASSIGNED,
+    DELIVERY_EVENTS.DELIVERY_ASSIGNED,
+    { failureReason: undefined },
+  );
+};
+
+export const startDelivery = async (orderId: string): Promise<void> => {
+  await transitionDelivery(
+    orderId,
+    DELIVERY_STATES.OUT_FOR_DELIVERY,
+    DELIVERY_EVENTS.DELIVERY_STARTED,
+  );
+};
+
+export const completeDelivery = async (orderId: string): Promise<void> => {
+  await transitionDelivery(
+    orderId,
+    DELIVERY_STATES.DELIVERED,
+    DELIVERY_EVENTS.DELIVERY_COMPLETED,
+  );
+};
+
+export const failDelivery = async (
+  orderId: string,
+  reason: string,
+): Promise<void> => {
+  if (!reason.trim()) {
+    throw new Error("Failure reason is required");
+  }
+
+  await transitionDelivery(
+    orderId,
+    DELIVERY_STATES.FAILED,
+    DELIVERY_EVENTS.DELIVERY_FAILED,
+    { failureReason: reason.trim() },
+  );
+};
+
+export const returnDelivery = async (orderId: string): Promise<void> => {
+  await transitionDelivery(
+    orderId,
+    DELIVERY_STATES.RETURNED,
+    DELIVERY_EVENTS.DELIVERY_RETURNED,
+  );
 };
