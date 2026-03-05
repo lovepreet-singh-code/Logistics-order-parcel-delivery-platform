@@ -20,5 +20,6 @@ gatewayRouter.use(
   "/notifications",
   createServiceProxy(env.notificationServiceUrl),
 );
+gatewayRouter.use("/api/metrics", createServiceProxy(env.reportingServiceUrl));
 
 export default gatewayRouter;

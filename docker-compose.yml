@@ -1,6 +1,24 @@
 version: "3.9"
 
 services:
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - logisticshub-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - logisticshub-network
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
     container_name: zookeeper
@@ -31,7 +49,205 @@ services:
     networks:
       - logisticshub-network
 
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_auth
+      JWT_SECRET: logisticshub-secret
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+    networks:
+      - logisticshub-network
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    environment:
+      PORT: 3002
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_user
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb
+    networks:
+      - logisticshub-network
+
+  franchise-service:
+    build: ./franchise-service
+    container_name: franchise-service
+    environment:
+      PORT: 3003
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_franchise
+    ports:
+      - "3003:3003"
+    depends_on:
+      - mongodb
+    networks:
+      - logisticshub-network
+
+  vehicle-service:
+    build: ./vehicle-service
+    container_name: vehicle-service
+    environment:
+      PORT: 3004
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_vehicle
+    ports:
+      - "3004:3004"
+    depends_on:
+      - mongodb
+    networks:
+      - logisticshub-network
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    environment:
+      PORT: 3005
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_order
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "3005:3005"
+    depends_on:
+      - mongodb
+      - kafka
+    networks:
+      - logisticshub-network
+
+  planning-service:
+    build: ./planning-service
+    container_name: planning-service
+    environment:
+      PORT: 3006
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_planning
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "3006:3006"
+    depends_on:
+      - mongodb
+      - kafka
+    networks:
+      - logisticshub-network
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    environment:
+      PORT: 3007
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_notification
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "3007:3007"
+    depends_on:
+      - mongodb
+      - kafka
+    networks:
+      - logisticshub-network
+
+  tracking-service:
+    build: ./tracking-service
+    container_name: tracking-service
+    environment:
+      PORT: 3008
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_tracking
+      KAFKA_BROKER: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3008:3008"
+    depends_on:
+      - mongodb
+      - kafka
+      - redis
+    networks:
+      - logisticshub-network
+
+  delivery-service:
+    build: ./delivery-service
+    container_name: delivery-service
+    environment:
+      PORT: 3010
+      MONGODB_URI: mongodb://mongodb:27017/logisticshub_delivery
+      KAFKA_BROKER: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3010:3010"
+    depends_on:
+      - mongodb
+      - kafka
+      - redis
+    networks:
+      - logisticshub-network
+
+  reporting-service:
+    build: ./reporting-service
+    container_name: reporting-service
+    environment:
+      PORT: 4010
+      MONGO_URI: mongodb://mongodb:27017/logistics_reporting
+      MONGODB_URI: mongodb://mongodb:27017/logistics_reporting
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BROKER: kafka:9092
+      CACHE_TTL_SECONDS: 60
+    ports:
+      - "4010:4010"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:4010/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      - mongodb
+      - kafka
+      - redis
+    networks:
+      - logisticshub-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      JWT_SECRET: logisticshub-secret
+      AUTH_SERVICE_URL: http://auth-service:3001
+      USER_SERVICE_URL: http://user-service:3002
+      FRANCHISE_SERVICE_URL: http://franchise-service:3003
+      VEHICLE_SERVICE_URL: http://vehicle-service:3004
+      ORDER_SERVICE_URL: http://order-service:3005
+      PLANNING_SERVICE_URL: http://planning-service:3006
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      REPORTING_SERVICE_URL: http://reporting-service:4010
+    ports:
+      - "4000:4000"
+    depends_on:
+      - auth-service
+      - user-service
+      - franchise-service
+      - vehicle-service
+      - order-service
+      - planning-service
+      - delivery-service
+      - tracking-service
+      - notification-service
+      - reporting-service
+    networks:
+      - logisticshub-network
+
 networks:
   logisticshub-network:
     name: logisticshub-network
     driver: bridge
+
+volumes:
+  mongodb-data:

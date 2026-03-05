@@ -13,6 +13,7 @@ type EnvConfig = {
   orderServiceUrl: string;
   planningServiceUrl: string;
   notificationServiceUrl: string;
+  reportingServiceUrl: string;
 };
 
 const requiredVar = (name: string): string => {
@@ -36,4 +37,5 @@ export const env: EnvConfig = {
   orderServiceUrl: requiredVar("ORDER_SERVICE_URL"),
   planningServiceUrl: requiredVar("PLANNING_SERVICE_URL"),
   notificationServiceUrl: requiredVar("NOTIFICATION_SERVICE_URL"),
+  reportingServiceUrl: requiredVar("REPORTING_SERVICE_URL"),
 };
