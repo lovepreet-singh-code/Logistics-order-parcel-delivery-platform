@@ -18,6 +18,14 @@ const SUPPORTED_DELIVERY_EVENTS = new Set([
   "DELIVERY_RETURNED",
 ]);
 
+const TIMELINE_EVENT_LABELS: Record<string, string> = {
+  DELIVERY_ASSIGNED: "Delivery Assigned",
+  DELIVERY_STARTED: "Out For Delivery",
+  DELIVERY_COMPLETED: "Delivered",
+  DELIVERY_FAILED: "Delivery Failed",
+  DELIVERY_RETURNED: "Returned",
+};
+
 const toTimelineProcessedEventId = (eventId: string): string => {
   return `${eventId}:timeline`;
 };
@@ -103,7 +111,7 @@ export const processDeliveryTimelineEvent = async (
 
   await appendTimelineEvent(
     validEvent.correlationId,
-    validEvent.eventType,
+    TIMELINE_EVENT_LABELS[validEvent.eventType],
     timestamp,
   );
 
