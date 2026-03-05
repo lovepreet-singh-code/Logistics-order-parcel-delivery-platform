@@ -1,9 +1,11 @@
 import type { Request, Response } from "express";
 import { getCached, setCached } from "../cache/reporting.cache";
 import {
+  getDeliveryKpi,
   getDailyMetrics,
   getDeliveryMetrics,
   getOrderMetrics,
+  getSystemKpi,
 } from "../services/metrics.service";
 import { fail, ok } from "../utils/apiResponse";
 
@@ -57,6 +59,39 @@ export const fetchDailyMetrics = async (req: Request, res: Response): Promise<vo
 
   const metrics = await getDailyMetrics(date);
   const payload = ok("Daily metrics fetched", metrics);
+  await setCached(key, payload);
+  res.status(200).json(payload);
+};
+
+export const fetchSystemKpi = async (_req: Request, res: Response): Promise<void> => {
+  const key = "reporting:kpi:system";
+  const cached = await getCached<unknown>(key);
+
+  if (cached) {
+    res.status(200).json(cached);
+    return;
+  }
+
+  const metrics = await getSystemKpi();
+  const payload = ok("System KPI fetched", metrics);
+  await setCached(key, payload);
+  res.status(200).json(payload);
+};
+
+export const fetchDeliveryKpi = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const key = "reporting:kpi:delivery";
+  const cached = await getCached<unknown>(key);
+
+  if (cached) {
+    res.status(200).json(cached);
+    return;
+  }
+
+  const metrics = await getDeliveryKpi();
+  const payload = ok("Delivery KPI fetched", metrics);
   await setCached(key, payload);
   res.status(200).json(payload);
 };
